@@ -8,7 +8,7 @@ draw_stack = []
 #Global variables for drawing at mouse pos
 prevX = None
 prevY = None
-type = "freehand"
+
 prevType = None
 
 #redraw clear  
@@ -70,6 +70,12 @@ bin = "images.png"
 button_image = tk.PhotoImage(file=bin)
 clear_button = tk.Button(button_frame, image=button_image, command=clear_button_clear, width=50, height=50)
 
+
+
+
+
+
+
 # Width selection radio buttons
 currentWidth = tk.IntVar(value=2)
 def printResults():
@@ -82,24 +88,45 @@ tk.Radiobutton(width_frame, text="2", variable=currentWidth, value=2, command=pr
 tk.Radiobutton(width_frame, text="3", variable=currentWidth, value=3, command=printResults).pack(side=tk.LEFT, padx=5)
 tk.Radiobutton(width_frame, text="4", variable=currentWidth, value=4, command=printResults).pack(side=tk.LEFT, padx=5)
 
+
+
+# Variable to hold the type
+type = tk.StringVar(value="freehand")
+button_width_frame = tk.Frame(button_frame)
+
+# Add radio buttons for selecting "type"
+tk.Radiobutton(button_width_frame, text="freehand", variable=type, value="freehand", command=lambda: print(type.get())).pack(side=tk.RIGHT, padx=5)
+tk.Radiobutton(button_width_frame, text="circle", variable=type, value="circle", command=lambda: print(type.get())).pack(side=tk.RIGHT, padx=5)
+
+# Pack button_width_frame within button_frame2 to make it visible
+
 # Pack buttons into the frame
 clear_button.pack(side=tk.LEFT, padx=10)
 Colour_button.pack(side=tk.LEFT, padx=10)
 redraw_button.pack(side=tk.LEFT, padx=10)
 width_frame.pack(side=tk.LEFT, padx=10)
+button_width_frame.pack(side = tk.LEFT, padx = 10)
+
+current_circle = None
 
 # Drawing functions
 def startDraw(event):
-    global prevX, prevY
+    global prevX, prevY, type, current_circle, colour
     prevX = event.x
     prevY = event.y
+    
+    if type.get() == "circle":
+        current_circle = myCanvas.create_oval(prevX, prevY, event.x, event.y, outline=colour, width=currentWidth.get())
+        
+    
+    
 
 def draw(event):
-    global prevX, prevY, colour, type, current_command_list, prevType, currentWidth
-    if type == "freehand" and (prevX != event.x or prevY != event.y):
+    global prevX, prevY, colour, type, current_command_list, prevType, currentWidth, current_circle
+    if type.get() == "freehand" and (prevX != event.x or prevY != event.y):
         myCanvas.create_line(prevX, prevY, event.x, event.y, fill=colour, width=currentWidth.get())
         jsonCommand = {
-            "type": type,
+            "type": type.get(),
             "X1": event.x,
             "Y1": event.y,
             "X2": prevX,
@@ -115,8 +142,12 @@ def draw(event):
         current_command_list.append(json_data)
         
         
-    if type == "circle" and (prevX != event.x or prevY != event.y):
-        print("todo")
+    elif type.get() == "circle" and current_circle:
+        myCanvas.coords(current_circle, prevX, prevY, event.x, event.y)
+
+         
+      
+         
         
     check_size()
 
@@ -127,10 +158,18 @@ def check_size():
         current_command_list.clear()
 
 def endDraw(event):
-    global prevX, prevY
+    global prevX, prevY, type, current_circle
+  
+    
+    if type.get() == "circle":
+        current_circle = None
+        
     prevX = None
     prevY = None
 
+    
+        
+    
 myCanvas.bind("<ButtonPress-1>", startDraw)
 myCanvas.bind("<B1-Motion>", draw)
 myCanvas.bind("<ButtonRelease-1>", endDraw)
